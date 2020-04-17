@@ -36,10 +36,6 @@ warnings.filterwarnings(module='sklearn*', action='ignore', category=Deprecation
 warnings.filterwarnings(module='sklearn*', action='ignore', category=DeprecationWarning)
 cluster_df = pd.read_pickle('final_df.pkl')
 
-app = dash.Dash(__name__,
-                external_stylesheets=[dbc.themes.BOOTSTRAP, "https://codepen.io/chriddyp/pen/bWLwgP.css"])
-server = app.server
-
 def get_breaks(row, col, word_limit=45, break_char='<br>', colon=True):
     col_list = ['tokens', 'author_list', 'doi', 'countries']
     if row[col] == row[col]:
@@ -103,25 +99,27 @@ class Cluster_Plot:
             }
         }
         self.search = ''
-        self.set_app()
         self.df = df
         self.set_text(text_type)
         self.clust_nums = clust_nums
         self.cluster_id_list = [{'label': i, 'value': i} for i in list(range(self.clust_nums))]
         self.cluster_id_list.append({'label': 'all', 'value': 'all'})
         self.create_cluster_df()
-
+        self.app = dash.Dash(__name__,
+                        external_stylesheets=[dbc.themes.BOOTSTRAP, "https://codepen.io/chriddyp/pen/bWLwgP.css"])
+        self.set_app_layout()                
+        self.server = self.app.server
         if self.app is not None and hasattr(self, 'callbacks'):
             self.callbacks(self.app)
 
+
     def run_process(self):
-        self.set_app_layout()
         self.app.config.suppress_callback_exceptions = True
         self.app.run_server()
 
-    def set_app(self):
-        self.app = app
-        # server = self.app.server
+    # def set_app(self):
+    #     self.app = app
+
 
     def set_app_layout(self):
         self.app.layout = html.Div(children=[
@@ -429,7 +427,8 @@ class Cluster_Plot:
                 return string
             return string
 
+app = Cluster_Plot(cluster_df, 'abstract', 10)
+server = app.server
 if __name__ == '__main__':
     print('app starting..')
-    c = Cluster_Plot(cluster_df, 'abstract', 10)
-    c.run_process()
+    app.run_process()
