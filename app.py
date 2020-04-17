@@ -100,6 +100,7 @@ class Cluster_Plot:
         }
         self.search = ''
         self.df = df
+        self.geo_click_data = None
         self.set_text(text_type)
         self.clust_nums = clust_nums
         self.cluster_id_list = [{'label': i, 'value': i} for i in list(range(self.clust_nums))]
@@ -107,7 +108,7 @@ class Cluster_Plot:
         self.create_cluster_df()
         self.app = dash.Dash(__name__,
                         external_stylesheets=[dbc.themes.BOOTSTRAP, "https://codepen.io/chriddyp/pen/bWLwgP.css"])
-        self.set_app_layout()                
+        self.set_app_layout()
         self.server = self.app.server
         if self.app is not None and hasattr(self, 'callbacks'):
             self.callbacks(self.app)
