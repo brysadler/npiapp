@@ -565,5 +565,6 @@ class Cluster_Plot:
             return string
 
 if __name__ == '__main__':
+    print('app starting..')
     c = Cluster_Plot(cluster_df, 'abstract', 10)
     c.run_process()
