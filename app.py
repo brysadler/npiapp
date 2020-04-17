@@ -134,7 +134,7 @@ class Preprocesser:
         y_pred = self.clf_xgb.predict(X_test)
         precision_recall_fscore_support(y_test, y_pred, average='macro')
         score = accuracy_score(y_test, y_pred)
-        print(f'Accuracy Score: {score}')
+        print('Accuracy Score: {}'.format(score))
 
     def npi_slice(self):
         def npi_col(row):
