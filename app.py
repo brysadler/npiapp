@@ -258,6 +258,7 @@ class Cluster_Plot:
     def set_app(self):
         self.app = dash.Dash(__name__,
                         external_stylesheets=[dbc.themes.BOOTSTRAP, "https://codepen.io/chriddyp/pen/bWLwgP.css"])
+        server = self.app.server
 
     def set_app_layout(self):
         self.app.layout = html.Div(children=[
