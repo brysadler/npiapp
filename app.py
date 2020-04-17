@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import pickle
 import glob
 import json
-import nltk
+# import nltk
 # nltk.download('punkt')
 # nltk.download('stopwords')
 # from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+# from nltk.tokenize import sent_tokenize, word_tokenize
 from collections import Counter
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -82,11 +82,11 @@ def get_wordcloud(df):
     text = ''
     for body_text in df['title']:
         text = text + body_text
-    tokens = word_tokenize(text)
-    remove_sw = [word.lower() for word in tokens if word not in stopwords.words('english')]
+    tokens = text.split(' ')
+    remove_sw = [word.lower() for word in tokens if word not in ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"]]
     remove_punct = [word for word in remove_sw if not word in [',', '(', ')', '"', ':', '``', '.', '?', '<', '>', 'br', 'title']]
     keywords = Counter(remove_punct).most_common()[0:5]
-    return ', '.join([keyword[0] for keyword in keywords])
+    return ', '.join([keyword[0] for keyword in keywords]).lstrip(', ')
 
 class Cluster_Plot:
     def __init__(self, df, text_type, clust_nums):
@@ -161,7 +161,7 @@ class Cluster_Plot:
                     ], className='eight columns'),
                     html.Div(className='four columns', style={"float": "right", 'left': '60%', 'top': '20px'}, children=[
                         dcc.Graph(id="graph", style={'width': '75%', 'height': '350px'}),
-                        html.H5('Current Cluser keywords'),
+                        html.H5('Current Cluster keywords'),
                         html.Div(id='cluster_keywords'),
                         html.Div(id='tabs-content')
                     ])
