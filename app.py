@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import pickle
 import glob
 import json
-import nltk
+# import nltk
 # nltk.download('punkt')
 # nltk.download('stopwords')
-from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize, word_tokenize
+# from nltk.corpus import stopwords
+# from nltk.tokenize import sent_tokenize, word_tokenize
 from collections import Counter
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -31,150 +31,150 @@ from dash.dependencies import Input, Output, State
 import warnings
 
 warnings.filterwarnings(module='sklearn*', action='ignore', category=DeprecationWarning)
-DATA_FILE = 'labeled_npi.csv'
+# DATA_FILE = 'labeled_npi.csv'
 
 warnings.filterwarnings(module='sklearn*', action='ignore', category=DeprecationWarning)
-df = pd.read_pickle('data.pkl')
+cluster_df = pd.read_pickle('final_df.pkl')
 
-def pca_apply(df, columns, n_comp):
-    new_df = df.copy()
-    for col in columns:
-        pca = PCA(n_components=n_comp, random_state=1)
-        new_df[col+'_pca'] = list(pca.fit_transform(np.stack(df[col].to_numpy())))
-    return new_df.reset_index(drop=True)
+# def pca_apply(df, columns, n_comp):
+#     new_df = df.copy()
+#     for col in columns:
+#         pca = PCA(n_components=n_comp, random_state=1)
+#         new_df[col+'_pca'] = list(pca.fit_transform(np.stack(df[col].to_numpy())))
+#     return new_df.reset_index(drop=True)
 
-def apply_scaler(df, columns):
-    new_df = df.copy()
-    for col in columns:
-        scaler = StandardScaler()
-        new_df[col + '_scaled'] = list(scaler.fit_transform(np.stack(df[col].to_numpy())))
-    return new_df.reset_index(drop=True)
+# def apply_scaler(df, columns):
+#     new_df = df.copy()
+#     for col in columns:
+#         scaler = StandardScaler()
+#         new_df[col + '_scaled'] = list(scaler.fit_transform(np.stack(df[col].to_numpy())))
+#     return new_df.reset_index(drop=True)
 
-class Preprocesser:
-    def __init__(self, df):
-        self.df_labels = pd.read_csv(DATA_FILE)
-        self.keywords = ['incident command system',
-                         'emergency operations',
-                         'joint information center',
-                         'social distancing',
-                         'childcare closers',
-                         'travel advisory',
-                         'travel warning',
-                         'isolation',
-                         'quarantine',
-                         'mass gathering cancellations',
-                         'school closures',
-                         'facility closures',
-                         'evacuation',
-                         'relocation',
-                         'restricting travel',
-                         'travel ban',
-                         'patient cohort',
-                         'npi']
-        self.occurances_minimum = 2
-        self.df_full = df
-        self.countries = set([k.lower() for k in dict(countries_for_language('en')).values()])
-        self.key_slice()
+# class Preprocesser:
+#     def __init__(self, df):
+#         self.df_labels = pd.read_csv(DATA_FILE)
+#         self.keywords = ['incident command system',
+#                          'emergency operations',
+#                          'joint information center',
+#                          'social distancing',
+#                          'childcare closers',
+#                          'travel advisory',
+#                          'travel warning',
+#                          'isolation',
+#                          'quarantine',
+#                          'mass gathering cancellations',
+#                          'school closures',
+#                          'facility closures',
+#                          'evacuation',
+#                          'relocation',
+#                          'restricting travel',
+#                          'travel ban',
+#                          'patient cohort',
+#                          'npi']
+#         self.occurances_minimum = 2
+#         self.df_full = df
+#         self.countries = set([k.lower() for k in dict(countries_for_language('en')).values()])
+#         self.key_slice()
 
-    def run_process(self):
-        self.remove_punc(['body_text','abstract'])
-        self.remove_stopwords(['body_text', 'abstract'])
-        self.to_tfidf(['body_text', 'abstract'])
-        self.npi_model()
-        self.keyword_occurances_slice()
-        self.df_full = pca_apply(self.df_full, ['abstract_tfidf','body_text_tfidf'], 10)
-        self.df_full = apply_scaler(self.df_full,['abstract_tfidf_pca','body_text_tfidf_pca'])
-        self.npi_slice()
-        self.set_country_columns()
-        print(self.df_full.shape)
+#     def run_process(self):
+#         self.remove_punc(['body_text','abstract'])
+#         self.remove_stopwords(['body_text', 'abstract'])
+#         self.to_tfidf(['body_text', 'abstract'])
+#         self.npi_model()
+#         self.keyword_occurances_slice()
+#         self.df_full = pca_apply(self.df_full, ['abstract_tfidf','body_text_tfidf'], 10)
+#         self.df_full = apply_scaler(self.df_full,['abstract_tfidf_pca','body_text_tfidf_pca'])
+#         self.npi_slice()
+#         self.set_country_columns()
+#         print(self.df_full.shape)
 
-    def set_country_columns(self):
-        def get_country(row):
-            text_set = set(row['body_text'].split(' '))
-            return list(self.countries.intersection(text_set))
-        self.df_full['countries'] = self.df_full.apply(get_country, axis=1)
+#     def set_country_columns(self):
+#         def get_country(row):
+#             text_set = set(row['body_text'].split(' '))
+#             return list(self.countries.intersection(text_set))
+#         self.df_full['countries'] = self.df_full.apply(get_country, axis=1)
 
-    def key_slice(self):
-        self.df_full = self.df_full[self.df_full['abstract'].str.contains('|'.join(self.keywords), na=False, regex=True)].reset_index(drop=True)
+#     def key_slice(self):
+#         self.df_full = self.df_full[self.df_full['abstract'].str.contains('|'.join(self.keywords), na=False, regex=True)].reset_index(drop=True)
 
-    def keyword_occurances_slice(self):
-        def get_count(row):
-            return sum([row['abstract'].count(keyword) for keyword in self.keywords])
-        self.df_full = self.df_full[self.df_full.apply(get_count, axis=1) >= self.occurances_minimum]
+#     def keyword_occurances_slice(self):
+#         def get_count(row):
+#             return sum([row['abstract'].count(keyword) for keyword in self.keywords])
+#         self.df_full = self.df_full[self.df_full.apply(get_count, axis=1) >= self.occurances_minimum]
 
-    def remove_stopwords(self,columns):
-        stop = stopwords.words('english')
-        for col in columns:
-            self.df_full[col] = self.df_full[col].astype(str).apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+#     def remove_stopwords(self,columns):
+#         stop = stopwords.words('english')
+#         for col in columns:
+#             self.df_full[col] = self.df_full[col].astype(str).apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
-    def to_tfidf(self, columns):
-        for col in columns:
-            tfidfv = TfidfVectorizer()
-            self.df_full[col + '_tfidf'] = list(tfidfv.fit_transform(self.df_full[col]).toarray())
+#     def to_tfidf(self, columns):
+#         for col in columns:
+#             tfidfv = TfidfVectorizer()
+#             self.df_full[col + '_tfidf'] = list(tfidfv.fit_transform(self.df_full[col]).toarray())
 
-    def remove_punc(self, columns):
-        for col in columns:
-            self.df_full[col] = self.df_full[col].str.replace('[^a-zA-Z\s]+','')
+#     def remove_punc(self, columns):
+#         for col in columns:
+#             self.df_full[col] = self.df_full[col].str.replace('[^a-zA-Z\s]+','')
 
-    def npi_model(self):
-        df = self.df_full.copy()
-        df = df.merge(self.df_labels, on="title", how="inner")
-        df = df.loc[df.isNPI.notna()]
-        pca_df = pca_apply(df, ['abstract_tfidf','body_text_tfidf'], 10)
-        scaled_df = apply_scaler(pca_df,['abstract_tfidf_pca','body_text_tfidf_pca'])
-        X = np.stack(scaled_df['body_text_tfidf_pca_scaled'].to_numpy())
-        y = scaled_df["isNPI"]
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10, stratify=y)
-        dtrain = xgb.DMatrix(X_train, label=y_train)
-        dtest = xgb.DMatrix(X_test, label=y_test)
-        param = {'max_depth': 2, 'eta': 1, 'objective': 'binary:logistic', 'eval_metric': 'auc'}
-        self.clf_xgb = xgb.XGBClassifier(max_depth=6, learning_rate=0.1,silent=False, objective='binary:logistic', \
-                          booster='gbtree', n_jobs=8, nthread=None, gamma=0, min_child_weight=1, max_delta_step=0, \
-                          subsample=0.8, colsample_bytree=0.8, colsample_bylevel=1, reg_alpha=0, reg_lambda=1)
-        self.clf_xgb.fit(X_train, y_train)
-        y_pred = self.clf_xgb.predict(X_test)
-        precision_recall_fscore_support(y_test, y_pred, average='macro')
-        score = accuracy_score(y_test, y_pred)
-        print('Accuracy Score: {}'.format(score))
+#     def npi_model(self):
+#         df = self.df_full.copy()
+#         df = df.merge(self.df_labels, on="title", how="inner")
+#         df = df.loc[df.isNPI.notna()]
+#         pca_df = pca_apply(df, ['abstract_tfidf','body_text_tfidf'], 10)
+#         scaled_df = apply_scaler(pca_df,['abstract_tfidf_pca','body_text_tfidf_pca'])
+#         X = np.stack(scaled_df['body_text_tfidf_pca_scaled'].to_numpy())
+#         y = scaled_df["isNPI"]
+#         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=10, stratify=y)
+#         dtrain = xgb.DMatrix(X_train, label=y_train)
+#         dtest = xgb.DMatrix(X_test, label=y_test)
+#         param = {'max_depth': 2, 'eta': 1, 'objective': 'binary:logistic', 'eval_metric': 'auc'}
+#         self.clf_xgb = xgb.XGBClassifier(max_depth=6, learning_rate=0.1,silent=False, objective='binary:logistic', \
+#                           booster='gbtree', n_jobs=8, nthread=None, gamma=0, min_child_weight=1, max_delta_step=0, \
+#                           subsample=0.8, colsample_bytree=0.8, colsample_bylevel=1, reg_alpha=0, reg_lambda=1)
+#         self.clf_xgb.fit(X_train, y_train)
+#         y_pred = self.clf_xgb.predict(X_test)
+#         precision_recall_fscore_support(y_test, y_pred, average='macro')
+#         score = accuracy_score(y_test, y_pred)
+#         print('Accuracy Score: {}'.format(score))
 
-    def npi_slice(self):
-        def npi_col(row):
-            x = [row['body_text_tfidf_pca_scaled']]
-            y_pred = self.clf_xgb.predict(x)[0]
-            if y_pred > 0:
-                return True
-            return False
-        self.df_full['npi_pred'] = self.df_full.apply(npi_col, axis=1)
-        self.df_full = self.df_full[self.df_full['npi_pred']].reset_index(drop=True)
-        remove_list = ['body_text_tfidf',
-               'abstract_tfidf',
-               'abstract_tfidf_pca',
-               'body_text_tfidf_pca',
-               'npi_pred']
-        self.df_full = self.df_full.drop(columns=remove_list)
+#     def npi_slice(self):
+#         def npi_col(row):
+#             x = [row['body_text_tfidf_pca_scaled']]
+#             y_pred = self.clf_xgb.predict(x)[0]
+#             if y_pred > 0:
+#                 return True
+#             return False
+#         self.df_full['npi_pred'] = self.df_full.apply(npi_col, axis=1)
+#         self.df_full = self.df_full[self.df_full['npi_pred']].reset_index(drop=True)
+#         remove_list = ['body_text_tfidf',
+#                'abstract_tfidf',
+#                'abstract_tfidf_pca',
+#                'body_text_tfidf_pca',
+#                'npi_pred']
+#         self.df_full = self.df_full.drop(columns=remove_list)
 
-prepr = Preprocesser(df)
-prepr.run_process()
-cluster_df = prepr.df_full
-def reduce_dimension(row):
-    return row[:3]
+# prepr = Preprocesser(df)
+# prepr.run_process()
+# cluster_df = prepr.df_full
+# def reduce_dimension(row):
+#     return row[:3]
 
-cluster_df['abstract_tfidf_pca_scaled'] = cluster_df['abstract_tfidf_pca_scaled'].apply(reduce_dimension)
-cluster_df['body_text_tfidf_pca_scaled'] = cluster_df['body_text_tfidf_pca_scaled'].apply(reduce_dimension)
+# cluster_df['abstract_tfidf_pca_scaled'] = cluster_df['abstract_tfidf_pca_scaled'].apply(reduce_dimension)
+# cluster_df['body_text_tfidf_pca_scaled'] = cluster_df['body_text_tfidf_pca_scaled'].apply(reduce_dimension)
 
-def tokenize(row):
-    title_tokens = []
-    title = row['title']
-    if title == title:
-        title = re.sub('(/|\|:|&|#|-|\.)', '', title)
-        tokens = word_tokenize(title)
-        remove_sw = [word for word in tokens if word not in stopwords.words('english')]
-        remove_numbers = [word for word in remove_sw if not word.isnumeric()]
-        remove_comas = [word for word in remove_numbers if not word in [',', '(', ')', '"', ':', '``', '.', '?']]
-        title_tokens.extend(remove_comas)
-    return [value[0] for value in Counter(title_tokens).most_common()[0:30]]
+# def tokenize(row):
+#     title_tokens = []
+#     title = row['title']
+#     if title == title:
+#         title = re.sub('(/|\|:|&|#|-|\.)', '', title)
+#         tokens = word_tokenize(title)
+#         remove_sw = [word for word in tokens if word not in stopwords.words('english')]
+#         remove_numbers = [word for word in remove_sw if not word.isnumeric()]
+#         remove_comas = [word for word in remove_numbers if not word in [',', '(', ')', '"', ':', '``', '.', '?']]
+#         title_tokens.extend(remove_comas)
+#     return [value[0] for value in Counter(title_tokens).most_common()[0:30]]
 
-cluster_df['tokens'] = cluster_df.apply(tokenize, axis=1)
+# cluster_df['tokens'] = cluster_df.apply(tokenize, axis=1)
 
 def get_breaks(row, col, word_limit=45, break_char='<br>', colon=True):
     col_list = ['tokens', 'author_list', 'doi', 'countries']
